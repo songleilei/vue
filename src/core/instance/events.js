@@ -5,33 +5,35 @@ import {
   toArray,
   hyphenate,
   formatComponentName,
-  invokeWithErrorHandling
+  invokeWithErrorHandling,
 } from '../util/index'
 import { updateListeners } from '../vdom/helpers/index'
 
-export function initEvents (vm: Component) {
+export function initEvents(vm: Component) {
   vm._events = Object.create(null)
   vm._hasHookEvent = false
   // init parent attached events
+  // 获取父元素上附加的事件
   const listeners = vm.$options._parentListeners
   if (listeners) {
+    // 注册自定义事件
     updateComponentListeners(vm, listeners)
   }
 }
 
 let target: any
 
-function add (event, fn) {
+function add(event, fn) {
   target.$on(event, fn)
 }
 
-function remove (event, fn) {
+function remove(event, fn) {
   target.$off(event, fn)
 }
 
-function createOnceHandler (event, fn) {
+function createOnceHandler(event, fn) {
   const _target = target
-  return function onceHandler () {
+  return function onceHandler() {
     const res = fn.apply(null, arguments)
     if (res !== null) {
       _target.$off(event, onceHandler)
@@ -39,19 +41,29 @@ function createOnceHandler (event, fn) {
   }
 }
 
-export function updateComponentListeners (
+export function updateComponentListeners(
   vm: Component,
   listeners: Object,
   oldListeners: ?Object
 ) {
   target = vm
-  updateListeners(listeners, oldListeners || {}, add, remove, createOnceHandler, vm)
+  updateListeners(
+    listeners,
+    oldListeners || {},
+    add,
+    remove,
+    createOnceHandler,
+    vm
+  )
   target = undefined
 }
 
-export function eventsMixin (Vue: Class<Component>) {
+export function eventsMixin(Vue: Class<Component>) {
   const hookRE = /^hook:/
-  Vue.prototype.$on = function (event: string | Array<string>, fn: Function): Component {
+  Vue.prototype.$on = function (
+    event: string | Array<string>,
+    fn: Function
+  ): Component {
     const vm: Component = this
     if (Array.isArray(event)) {
       for (let i = 0, l = event.length; i < l; i++) {
@@ -70,7 +82,7 @@ export function eventsMixin (Vue: Class<Component>) {
 
   Vue.prototype.$once = function (event: string, fn: Function): Component {
     const vm: Component = this
-    function on () {
+    function on() {
       vm.$off(event, on)
       fn.apply(vm, arguments)
     }
@@ -79,7 +91,10 @@ export function eventsMixin (Vue: Class<Component>) {
     return vm
   }
 
-  Vue.prototype.$off = function (event?: string | Array<string>, fn?: Function): Component {
+  Vue.prototype.$off = function (
+    event?: string | Array<string>,
+    fn?: Function
+  ): Component {
     const vm: Component = this
     // all
     if (!arguments.length) {
@@ -122,10 +137,14 @@ export function eventsMixin (Vue: Class<Component>) {
       if (lowerCaseEvent !== event && vm._events[lowerCaseEvent]) {
         tip(
           `Event "${lowerCaseEvent}" is emitted in component ` +
-          `${formatComponentName(vm)} but the handler is registered for "${event}". ` +
-          `Note that HTML attributes are case-insensitive and you cannot use ` +
-          `v-on to listen to camelCase events when using in-DOM templates. ` +
-          `You should probably use "${hyphenate(event)}" instead of "${event}".`
+            `${formatComponentName(
+              vm
+            )} but the handler is registered for "${event}". ` +
+            `Note that HTML attributes are case-insensitive and you cannot use ` +
+            `v-on to listen to camelCase events when using in-DOM templates. ` +
+            `You should probably use "${hyphenate(
+              event
+            )}" instead of "${event}".`
         )
       }
     }

@@ -5,11 +5,11 @@ import { warn as baseWarn, tip } from 'core/util/debug'
 import { generateCodeFrame } from './codeframe'
 
 type CompiledFunctionResult = {
-  render: Function;
-  staticRenderFns: Array<Function>;
-};
+  render: Function,
+  staticRenderFns: Array<Function>,
+}
 
-function createFunction (code, errors) {
+function createFunction(code, errors) {
   try {
     return new Function(code)
   } catch (err) {
@@ -18,10 +18,10 @@ function createFunction (code, errors) {
   }
 }
 
-export function createCompileToFunctionFn (compile: Function): Function {
+export function createCompileToFunctionFn(compile: Function): Function {
   const cache = Object.create(null)
 
-  return function compileToFunctions (
+  return function compileToFunctions(
     template: string,
     options?: CompilerOptions,
     vm?: Component
@@ -39,15 +39,16 @@ export function createCompileToFunctionFn (compile: Function): Function {
         if (e.toString().match(/unsafe-eval|CSP/)) {
           warn(
             'It seems you are using the standalone build of Vue.js in an ' +
-            'environment with Content Security Policy that prohibits unsafe-eval. ' +
-            'The template compiler cannot work in this environment. Consider ' +
-            'relaxing the policy to allow unsafe-eval or pre-compiling your ' +
-            'templates into render functions.'
+              'environment with Content Security Policy that prohibits unsafe-eval. ' +
+              'The template compiler cannot work in this environment. Consider ' +
+              'relaxing the policy to allow unsafe-eval or pre-compiling your ' +
+              'templates into render functions.'
           )
         }
       }
     }
 
+    // 1. 读取缓存中的 CompiledFunctionResult 对象，如果有直接返回
     // check cache
     const key = options.delimiters
       ? String(options.delimiters) + template
@@ -56,6 +57,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
       return cache[key]
     }
 
+    // 2. 把模板编译为编译对象（render，staticRenderFns）,字符串形式的 js 代码
     // compile
     const compiled = compile(template, options)
 
@@ -63,26 +65,27 @@ export function createCompileToFunctionFn (compile: Function): Function {
     if (process.env.NODE_ENV !== 'production') {
       if (compiled.errors && compiled.errors.length) {
         if (options.outputSourceRange) {
-          compiled.errors.forEach(e => {
+          compiled.errors.forEach((e) => {
             warn(
               `Error compiling template:\n\n${e.msg}\n\n` +
-              generateCodeFrame(template, e.start, e.end),
+                generateCodeFrame(template, e.start, e.end),
               vm
             )
           })
         } else {
           warn(
             `Error compiling template:\n\n${template}\n\n` +
-            compiled.errors.map(e => `- ${e}`).join('\n') + '\n',
+              compiled.errors.map((e) => `- ${e}`).join('\n') +
+              '\n',
             vm
           )
         }
       }
       if (compiled.tips && compiled.tips.length) {
         if (options.outputSourceRange) {
-          compiled.tips.forEach(e => tip(e.msg, vm))
+          compiled.tips.forEach((e) => tip(e.msg, vm))
         } else {
-          compiled.tips.forEach(msg => tip(msg, vm))
+          compiled.tips.forEach((msg) => tip(msg, vm))
         }
       }
     }
@@ -90,8 +93,10 @@ export function createCompileToFunctionFn (compile: Function): Function {
     // turn code into functions
     const res = {}
     const fnGenErrors = []
+
+    // 3. 把字符串形式的 js 代码转换成 js 方法
     res.render = createFunction(compiled.render, fnGenErrors)
-    res.staticRenderFns = compiled.staticRenderFns.map(code => {
+    res.staticRenderFns = compiled.staticRenderFns.map((code) => {
       return createFunction(code, fnGenErrors)
     })
 
@@ -103,12 +108,15 @@ export function createCompileToFunctionFn (compile: Function): Function {
       if ((!compiled.errors || !compiled.errors.length) && fnGenErrors.length) {
         warn(
           `Failed to generate render function:\n\n` +
-          fnGenErrors.map(({ err, code }) => `${err.toString()} in\n\n${code}\n`).join('\n'),
+            fnGenErrors
+              .map(({ err, code }) => `${err.toString()} in\n\n${code}\n`)
+              .join('\n'),
           vm
         )
       }
     }
 
+    // 4. 缓存并返回 res 对象（render，staticRenderFns方法）
     return (cache[key] = res)
   }
 }

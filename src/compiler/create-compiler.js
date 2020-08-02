@@ -4,9 +4,11 @@ import { extend } from 'shared/util'
 import { detectErrors } from './error-detector'
 import { createCompileToFunctionFn } from './to-function'
 
-export function createCompilerCreator (baseCompile: Function): Function {
-  return function createCompiler (baseOptions: CompilerOptions) {
-    function compile (
+export function createCompilerCreator(baseCompile: Function): Function {
+  // baseOptions 平台相关的 options
+  // src/paltforms/web/compiler/options.js 中定义
+  return function createCompiler(baseOptions: CompilerOptions) {
+    function compile(
       template: string,
       options?: CompilerOptions
     ): CompiledResult {
@@ -19,7 +21,10 @@ export function createCompilerCreator (baseCompile: Function): Function {
       }
 
       if (options) {
-        if (process.env.NODE_ENV !== 'production' && options.outputSourceRange) {
+        if (
+          process.env.NODE_ENV !== 'production' &&
+          options.outputSourceRange
+        ) {
           // $flow-disable-line
           const leadingSpaceLength = template.match(/^\s*/)[0].length
 
@@ -38,8 +43,9 @@ export function createCompilerCreator (baseCompile: Function): Function {
         }
         // merge custom modules
         if (options.modules) {
-          finalOptions.modules =
-            (baseOptions.modules || []).concat(options.modules)
+          finalOptions.modules = (baseOptions.modules || []).concat(
+            options.modules
+          )
         }
         // merge custom directives
         if (options.directives) {
@@ -69,7 +75,7 @@ export function createCompilerCreator (baseCompile: Function): Function {
 
     return {
       compile,
-      compileToFunctions: createCompileToFunctionFn(compile)
+      compileToFunctions: createCompileToFunctionFn(compile),
     }
   }
 }
